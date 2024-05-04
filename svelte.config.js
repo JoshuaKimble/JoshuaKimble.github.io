@@ -6,6 +6,9 @@ export default {
 			pages: 'build',
 			assets: 'build',
 			fallback: 'fallback.html'
-		})
+		}),
+		paths: {
+			base: '/JoshuaKimble.github.io'
+		}
 	}
 };

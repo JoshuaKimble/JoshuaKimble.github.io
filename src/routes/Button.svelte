@@ -1,10 +1,11 @@
 <script>
 	export let className = '';
 	export let variant = 'primary';
-	export let type = 'button'; // Default to 'button' to not accidentally submit forms
+	export let type = 'button';
+	export let disabled = false;
 </script>
 
-<button class="button {variant} {className}" {type} on:click>
+<button class="button {variant} {className}" {type} on:click {disabled}>
 	<slot></slot>
 </button>
 

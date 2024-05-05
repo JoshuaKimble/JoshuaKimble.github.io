@@ -2,18 +2,23 @@
 	import Modal from './Modal.svelte';
 	import Button from './Button.svelte';
 	import { onMount } from 'svelte';
-	import { loadPeople, savePeople } from './indexedDB.js';
+	import { base } from '$app/paths';
 
 	let people = [];
 
 	onMount(async () => {
-		const p = await loadPeople();
-		people = p;
-		console.log('p:', p);
+		const response = await fetch(`${base}/api/people`);
+		if (response.ok) {
+			const { data } = await response.json();
+			if (data) people = data;
+		} else {
+			console.error('Error fetching people');
+		}
 	});
 
 	let showModal = false;
 	let isAuthenticated = false;
+	let isLoading = false;
 
 	function getCurrentPin() {
 		const now = new Date();
@@ -27,7 +32,7 @@
 		const todayPin = getCurrentPin();
 		if (inputPin === todayPin) {
 			isAuthenticated = true;
-			showModal = false; // Close modal on successful login
+			showModal = false;
 		} else {
 			alert('Incorrect PIN');
 		}
@@ -37,20 +42,44 @@
 		showModal = !showModal;
 	}
 
-	async function addCoin(index) {
-		if (isAuthenticated) {
-			people[index].coins += 1;
-			await savePeople(people);
+	async function updateCoins(personName, newCoinCount) {
+		const response = await fetch(`${base}/api/people`, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({ name: personName, coins: newCoinCount })
+		});
+		if (response.ok) {
+			console.info('Update was successful');
 		} else {
-			alert('You must be signed in to edit coins!');
+			console.error('Failed to update coins');
 		}
 	}
-	async function removeCoin(index) {
-		if (isAuthenticated) {
-			people[index].coins -= 1;
-			await savePeople(people);
-		} else {
+
+	async function updateCoinCount(index, increment = true) {
+		if (!isAuthenticated) {
 			alert('You must be signed in to edit coins!');
+			return;
+		}
+
+		const { coins, name } = people[index];
+		const newCoinCount = increment ? coins + 1 : coins - 1;
+
+		if (newCoinCount < 0) {
+			alert('Coin count cannot be negative.');
+			return;
+		}
+
+		isLoading = true;
+		try {
+			await updateCoins(name, newCoinCount);
+			people[index].coins = newCoinCount;
+		} catch (error) {
+			console.error('Failed to update coins:', error);
+			alert('Failed to update coins.');
+		} finally {
+			isLoading = false;
 		}
 	}
 </script>
@@ -69,10 +98,14 @@
 			<div class="card-body">
 				<h3>{person.name}</h3>
 				<p>{person.coins} coins</p>
-				<Button variant="secondary" on:click={() => removeCoin(index)} disabled={!isAuthenticated}>
+				<Button
+					variant="secondary"
+					on:click={() => updateCoinCount(index, false)}
+					disabled={isLoading}
+				>
 					<span class="plus-minus">-</span>
 				</Button>
-				<Button on:click={() => addCoin(index)} disabled={!isAuthenticated}>
+				<Button on:click={() => updateCoinCount(index)} disabled={isLoading}>
 					<span class="plus-minus">+</span>
 				</Button>
 			</div>

@@ -18,7 +18,14 @@
 		<div class="modal-content">
 			<button class="close" on:click={close}>&times;</button>
 			<h2>Enter PIN</h2>
-			<input type="password" bind:value={pin} placeholder="Enter PIN" />
+			<input
+				type="password"
+				inputmode="numeric"
+				pattern="[0-9]*"
+				bind:value={pin}
+				placeholder="Enter PIN"
+				autocomplete="one-time-code"
+			/>
 			<Button on:click={onClick} type="submit">Sign In</Button>
 		</div>
 	</div>

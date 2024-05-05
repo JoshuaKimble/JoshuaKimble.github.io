@@ -25,26 +25,22 @@ function transformData(data) {
 }
 
 export async function GET() {
-	return json(process.env);
+	try {
+		const response = await sheets.spreadsheets.values.get({
+			spreadsheetId: process.env.SPREADSHEET_ID,
+			range: 'Sheet1'
+		});
+		return json({
+			data: transformData(response.data.values)
+		});
+	} catch (error) {
+		console.error('Failed to fetch data from Google Sheets:', error);
+		return json({
+			status: 500,
+			body: { message: 'Failed to fetch data', error }
+		});
+	}
 }
-// export async function GET() {
-// 	console.log('process.env.AUTH_EMAIL:', process.env.AUTH_EMAIL);
-// 	try {
-// 		const response = await sheets.spreadsheets.values.get({
-// 			spreadsheetId: process.env.SPREADSHEET_ID,
-// 			range: 'Sheet1'
-// 		});
-// 		return json({
-// 			data: transformData(response.data.values)
-// 		});
-// 	} catch (error) {
-// 		console.error('Failed to fetch data from Google Sheets:', error);
-// 		return json({
-// 			status: 500,
-// 			body: { message: 'Failed to fetch data', error }
-// 		});
-// 	}
-// }
 
 export async function POST({ request }) {
 	const { SPREADSHEET_ID } = process.env;
@@ -60,11 +56,6 @@ export async function POST({ request }) {
 
 		const rows = findResponse.data.values;
 		const rowIndex = rows.findIndex((row) => row[0] === name) + 1;
-
-		console.log('rowIndex:', rowIndex);
-		console.log('name:', name);
-		console.log('coins:', coins);
-		console.log('reqJson:', reqJson);
 
 		if (rowIndex > 0) {
 			sheets.spreadsheets.values.update({
